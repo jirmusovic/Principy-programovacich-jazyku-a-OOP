@@ -4,6 +4,7 @@ instructions.php
 $stderr = fopen('php://stderr', 'w');
 $stdin = fopen('php://stdin', "r") or die("Unable to open file!");
 $list = array();
+ini_set('display_errors', 'stderr');
 
 while(!feof($stdin)){
     $one_by_one = fgets($stdin);
@@ -39,23 +40,46 @@ for($i = 0; $i < $list_cnt; $i++){
     print("line_cnt $i = $line_cnt\n");
     for($j = 0; $j < $line_cnt ; $j++){
         if(stripos($list[$i][$j], "createframe") !== false || stripos($list[$i][$j], "pushframe") !== false || stripos($list[$i][$j], "popframe") !== false || stripos($list[$i][$j], "return") !== false || stripos($list[$i][$j], "break")){
-            print("jsem tu v poli [$i][$j]\n");
+            #print("jsem tu v poli [$i][$j]\n");
             if(!(!strcasecmp($list[$i][$j], "createframe") || !strcasecmp($list[$i][$j], "pushframe") || !strcasecmp($list[$i][$j], "popframe") || !strcasecmp($list[$i][$j], "return") || !strcasecmp($list[$i][$j], "break"))){
                 fwrite(STDERR, "Jina lexikalni nebo syntakticka chyba!\n");
                 exit(23);
             }
         }
-        if(stripos($list[$i][$j], "defvar") !== false){
-            print("jsem tu v poli [$i][$j]\n");
+        if(!strcasecmp($list[$i][$j], "defvar") || !strcasecmp($list[$i][$j], "pops")){
+            print("1. jsem tu v poli [$i][$j]\n");
+            $arr_cnt = count($list[$i]);
             $j++;
-            if(strpos($list[$i][$j], "GF@") !== 0 && strpos($list[$i][$j], "LF@") !== 0 && strpos($list[$i][$j], "TF@") !== 0){
-                print("jsem tu v poli [$i][$j]\n");
+            if($arr_cnt === $j){
+                #print("4. jsem tu v poli [$i][$j]\n");
+                fwrite(STDERR, "Jina lexikalni nebo syntakticka chyba!\n");
+                exit(23);
+            }
+            else if(strpos($list[$i][$j], "GF@") !== 0 && strpos($list[$i][$j], "LF@") !== 0 && strpos($list[$i][$j], "TF@") !== 0){
+                #print("2. jsem tu v poli [$i][$j]\n");
                 fwrite(STDERR, "Jina lexikalni nebo syntakticka chyba!\n");
                 exit(23);
             }
         }
-        
-        
+        if(!strcasecmp($list[$i][$j], "call") || !strcasecmp($list[$i][$j], "label") || !strcasecmp($list[$i][$j], "jump")){
+            $arr_cnt = count($list[$i]);
+            $j++;
+            #print("3. jsem tu v poli [$i][$j]\n");
+            if($arr_cnt === $j){
+                #print("4. jsem tu v poli [$i][$j]\n");
+                fwrite(STDERR, "Jina lexikalni nebo syntakticka chyba!\n");
+                exit(23);
+            }
+        }
+        if(!strcasecmp($list[$i][$j], "pushs") || !strcasecmp($list[$i][$j], "write") || !strcasecmp($list[$i][$j], "dprint")){
+            $j++;
+            $arr_cnt = count($list[$i]);
+            if($arr_cnt === $j){
+                #print("4. jsem tu v poli [$i][$j]\n");
+                fwrite(STDERR, "Jina lexikalni nebo syntakticka chyba!\n");
+                exit(23);
+            }
+        }
     }
 }
 

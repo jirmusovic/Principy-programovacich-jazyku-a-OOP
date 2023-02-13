@@ -25,7 +25,7 @@ while(!feof($stdin)){
     
 }
 
-if(strcmp($list[0][0], ".IPPcode23")){
+if(strcmp($list[0][0], ".IPPcode23") || count($list[0]) != 1){
     fwrite(STDERR, "Chybejici nebo chybna hlavicka souboru!\n");
     exit(21);
 }
@@ -33,7 +33,18 @@ if(strcmp($list[0][0], ".IPPcode23")){
 \array_splice($list, 0, 1);
 
 print_r($list);
+
+//regex
+$var = "/((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*/";
+$label = "/\S*/";
+$symbol = "/(((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*)*";  //dodelat bo fakt uz nevim
+
 $list_cnt = count($list);
+for($i = 0; $i < $list_cnt; $i++){
+
+}
+
+/*$list_cnt = count($list);
 print("list_cnt = $list_cnt\n");
 for($i = 0; $i < $list_cnt; $i++){
     $line_cnt = count($list[$i]);
@@ -81,7 +92,7 @@ for($i = 0; $i < $list_cnt; $i++){
             }
         }
     }
-}
+}*/
 
 
 

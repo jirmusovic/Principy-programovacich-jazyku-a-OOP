@@ -1,15 +1,25 @@
-instructions.php
 <?php
-
+include 'instructions.php';
 $stderr = fopen('php://stderr', 'w');
 $stdin = fopen('php://stdin', "r") or die("Unable to open file!");
 $list = array();
+global $vars;
 ini_set('display_errors', 'stderr');
+function err($code = 23, $msg = "Chybny pocet argumentu nebo spatny typ!"){
+    fwrite(STDERR, "$msg\n");
+    exit($code);
+}
 
 while(!feof($stdin)){
     $one_by_one = fgets($stdin);
-    $trimmed = str_replace("#", " #", $one_by_one);
-    $trimmed = trim($trimmed);
+
+    $comments = strpos($one_by_one, "#");
+    
+    if($comments !== false){
+        $one_by_one = substr($one_by_one, 0, $comments);
+    }
+
+    $trimmed = trim($one_by_one);
 
     while(str_contains($trimmed, '\t')){
         $trimmed = str_replace("\t", " ", $trimmed);
@@ -30,18 +40,61 @@ if(strcmp($list[0][0], ".IPPcode23") || count($list[0]) != 1){
     exit(21);
 }
 
+
+
 \array_splice($list, 0, 1);
 
 print_r($list);
 
 //regex
-$var = "/((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*/";
-$label = "/\S*/";
-$symbol = "/(((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*)*";  //dodelat bo fakt uz nevim
+$var = "/ ^((GF)|(LF)|(TF))@([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
+$label = "/^(\S^#)*/";
+//$symbol = "/(((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*)*";  //dodelat bo fakt uz nevim
+$int = "/^(int@[+-]?[1-9]\d*|0)$/";
+$bool = "/^bool@(true|false)$/";
+$string = "/^string@(([^#\\\\])|([\\\\[0-9]{3}]))*$/";
+$nil = "/^nil@nil$/";
+$patterns = array($int, $bool, $var, $string, $nil);
+
+function is_symbol($arg){
+    global $patterns;
+    foreach($patterns as $p){
+        if(preg_match($p, $arg)){
+            return true;
+        }
+    }
+    return false;
+}
+
 
 $list_cnt = count($list);
 for($i = 0; $i < $list_cnt; $i++){
-
+    if(in_array(strtoupper($list[$i][0]), $vars, true)){
+        $instr = $list[$i][0];
+        if(!strcasecmp($instr, "createframe") || !strcasecmp($instr, "pushframe") || !strcasecmp($instr, "popframe") || !strcasecmp($instr, "return") || !strcasecmp($instr, "break")){
+            if(count($list[$i]) != 1){
+                err();
+            }
+        }
+        elseif(!strcasecmp($instr, "defvar") || !strcasecmp($instr, "pops")){
+            if(count($list[$i]) != 2 || !preg_match($var, $list[$i][1])){
+                err();
+            }                                                       //haha
+        }
+        elseif(!strcasecmp($instr, "call") || !strcasecmp($instr, "label") || !strcasecmp($instr, "jump")){
+            if(count($list[$i]) != 2 || !preg_match($label, $list[$i][1])){
+                err();
+            }    
+        }
+        elseif(!strcasecmp($instr, "write") || !strcasecmp($instr, "exit") || !strcasecmp($instr, "pushs") || !strcasecmp($instr, "dprint")){
+            if(count($list[$i]) != 2 || !is_symbol($list[$i][1])){
+                err();
+            }    
+        }
+    }
+    else{
+        err(22, "Neznamy nebo chybny operacni kod!");
+    }
 }
 
 /*$list_cnt = count($list);

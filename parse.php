@@ -47,49 +47,66 @@ if(strcmp($list[0][0], ".IPPcode23") || count($list[0]) != 1){
 print_r($list);
 
 //regex
-$var = "/ ^((GF)|(LF)|(TF))@([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
+$var = "/^((GF)|(LF)|(TF))@([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
 $label = "/^(\S^#)*/";
-//$symbol = "/(((GF)|(LF)|(TF))@(([a-z])|[A-Z]|([_$&%*!?])|(-))(\S)*)*";  //dodelat bo fakt uz nevim
-$int = "/^(int@[+-]?[1-9]\d*|0)$/";
-$bool = "/^bool@(true|false)$/";
-$string = "/^string@(([^#\\\\])|([\\\\[0-9]{3}]))*$/";
-$nil = "/^nil@nil$/";
-$patterns = array($int, $bool, $var, $string, $nil);
+
 
 function is_symbol($arg){
-    global $patterns;
-    foreach($patterns as $p){
-        if(preg_match($p, $arg)){
-            return true;
-        }
-    }
+    global $var;
+    global $label;
+    $int = "/^(int@[+-]?[1-9]\d*|0)$/";
+    $bool = "/^bool@(true|false)$/";
+    $string = "/^string@((\\[0-9]{3})|([^(#\\)]))*$/";
+    $nil = "/^nil@nil$/";
+    if(preg_match($var, $arg) || preg_match($label, $arg) || preg_match($int, $arg) || preg_match($bool, $arg) || preg_match($string, $arg) || preg_match($nil, $arg))
+        return true;
+
     return false;
 }
+
+/*
+napad honzika:
+if preg match return
+    elif preg match return
+    elif ...{3}
+    else err
+ */
 
 
 $list_cnt = count($list);
 for($i = 0; $i < $list_cnt; $i++){
     if(in_array(strtoupper($list[$i][0]), $vars, true)){
         $instr = $list[$i][0];
+        //porovnej s instrukcemi bez atributu
         if(!strcasecmp($instr, "createframe") || !strcasecmp($instr, "pushframe") || !strcasecmp($instr, "popframe") || !strcasecmp($instr, "return") || !strcasecmp($instr, "break")){
             if(count($list[$i]) != 1){
                 err();
             }
         }
+        //instrukce s jednou promennou typu var
         elseif(!strcasecmp($instr, "defvar") || !strcasecmp($instr, "pops")){
             if(count($list[$i]) != 2 || !preg_match($var, $list[$i][1])){
                 err();
-            }                                                       //haha
+            }                                                      
         }
+        //instrukce s jednou promennouo typu label
         elseif(!strcasecmp($instr, "call") || !strcasecmp($instr, "label") || !strcasecmp($instr, "jump")){
             if(count($list[$i]) != 2 || !preg_match($label, $list[$i][1])){
                 err();
             }    
         }
+        //instrukce s jednou promennou typu symbol
         elseif(!strcasecmp($instr, "write") || !strcasecmp($instr, "exit") || !strcasecmp($instr, "pushs") || !strcasecmp($instr, "dprint")){
             if(count($list[$i]) != 2 || !is_symbol($list[$i][1])){
+                //print($i);
                 err();
             }    
+        }
+        //instrukce s dvema promennymi typu vas a symbol
+        elseif(!strcasecmp($instr, "move") || !strcasecmp($instr, "int2char") || !strcasecmp($instr, "strlen") || !strcasecmp($instr, "type")){
+            if(count($list[$i]) != 3 || !is_symbol($list[$i][2]) || !preg_match($var, $list[$i][1])){
+                err();
+            }
         }
     }
     else{

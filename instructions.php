@@ -22,7 +22,7 @@ $vars = array(
             "OR",
             "NOT",
             "INT2CHAR",
-            "STR2INT",
+            "STRI2INT",
             "READ",
             "WRITE",
             "CONCAT",
@@ -40,7 +40,7 @@ $vars = array(
         );
 
 enum types{
-    case INT;
+    case int;
     case bool;
     case string;
     case nil;
@@ -49,6 +49,7 @@ enum types{
     case var;
     case ippcode;
     case opcode;
+    case nomatch;
 }
 
 

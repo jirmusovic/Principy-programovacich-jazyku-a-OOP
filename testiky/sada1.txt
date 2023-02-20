@@ -1,2 +1,3 @@
 .IPPcode23
-LABEL couNter
+NOT GF@var bool@true 
+#230-235 generated/not/simple

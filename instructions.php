@@ -51,5 +51,3 @@ enum types{
     case opcode;
     case nomatch;
 }
-
-

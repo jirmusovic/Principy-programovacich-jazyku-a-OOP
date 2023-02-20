@@ -50,7 +50,7 @@ if(strcmp($list[0][0], ".IPPcode23") || count($list[0]) != 1){
 $var = "/^((GF)|(LF)|(TF))@([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
 $int = "/^(int@([+-]?[1-9]\d*|0))$/";
 $bool = "/^bool@(true|false)$/";
-$string = "/^string@((\\[0-9]{3})|([^(#\\)]))*$/";
+$string = "/^string@(([\\\\][0-9]{3})|([^#\\\\]))*$/";
 $nil = "/^nil@nil$/";
 $label = "/^([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
 
@@ -128,14 +128,15 @@ for($i = 0; $i < $list_cnt; $i++){
             }    
         }
         //instrukce s dvema promennymi typu vas a symbol
-        elseif(!strcasecmp($instr, "move") || !strcasecmp($instr, "int2char") || !strcasecmp($instr, "strlen") || !strcasecmp($instr, "type")){
+        elseif(!strcasecmp($instr, "move") || !strcasecmp($instr, "int2char") || !strcasecmp($instr, "strlen") || !strcasecmp($instr, "type") || !strcasecmp($instr, "not")){
             if(count($list[$i]) != 3 || !is_symbol($list[$i][2]) || !preg_match($var, $list[$i][1])){
+                //print("here\n".count($list[$i]).is_symbol($list[$i][2]));
                 err();
             }
         }
         elseif(!strcasecmp($instr, "add") || !strcasecmp($instr, "sub") || !strcasecmp($instr, "mul") || !strcasecmp($instr, "idiv") 
         || !strcasecmp($instr, "lt") || !strcasecmp($instr, "gt") || !strcasecmp($instr, "eq") || !strcasecmp($instr, "stri2int") 
-        || !strcasecmp($instr, "getchar") || !strcasecmp($instr, "and") || !strcasecmp($instr, "or") || !strcasecmp($instr, "not") 
+        || !strcasecmp($instr, "getchar") || !strcasecmp($instr, "and") || !strcasecmp($instr, "or") 
         || !strcasecmp($instr, "concat") || !strcasecmp($instr, "setchar")){
             if(count($list[$i]) != 4 || !is_symbol($list[$i][2]) || !is_symbol($list[$i][3]) || !preg_match($var, $list[$i][1])){
                 err();
@@ -163,10 +164,52 @@ $xml->openMemory();
 $xml->startDocument('1.0', 'UTF-8');
 $xml->setIndent(true);
 $xml->startElement('program');
-$xml->writeAttribute('language', "IPcode23");
+$xml->writeAttribute('language', "IPPcode23");
 
+
+for($i=0; $i < count($list); $i++){
+    $row = $list[$i];
+    $xml->startElement('instruction');
+    $xml->writeAttribute('order', $i+1);
+    $xml->writeAttribute('opcode', strtoupper($row[0]));
+    for($j=1; $j < count($row); $j++){
+        $xml->startElement('arg'.$j);
+        $text;
+        switch(get_type($row[$j])){
+            case types::int:
+                $text = "int";
+                $row[$j] = str_replace("int@", "", $row[$j]);
+                break;
+            case types::bool:
+                $text = "bool";
+                $row[$j] = str_replace("bool@", "", $row[$j]);
+                break;
+            case types::string:
+                $text = "string";
+                $row[$j] = str_replace("string@", "", $row[$j]);
+                break;
+            case types::nil:
+                $text = "nil";
+                $row[$j] = str_replace("nil@", "", $row[$j]);
+                break;
+            case types::label:
+                $text = "label";
+                break;
+            case types::type:
+                $text = "type";
+                break;
+            case types::var:
+                $text = "var";
+                break;
+        }
+        $xml->writeAttribute('type', $text);
+        $xml->text($row[$j]);
+        $xml->endElement();
+    }
+    $xml->endElement();
+}
 
 $xml->endElement();
-fwrite(STDOUT, $xml->flush())
-
+fwrite(STDOUT, $xml->flush());
+exit(0);
 ?>

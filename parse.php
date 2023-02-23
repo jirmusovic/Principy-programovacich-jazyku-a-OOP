@@ -1,52 +1,55 @@
 <?php
 include 'instructions.php';
+// Otevírání a načítání ze vstupu
 $stderr = fopen('php://stderr', 'w');
 $stdin = fopen('php://stdin', "r") or die("Unable to open file!");
+// Inicializace pole, do kterého se budou skládat jednotlivé instrukce
 $list = array();
 global $vars;
+// Výpis chybové hlášky a ukončení programu
 ini_set('display_errors', 'stderr');
 function err($code = 23, $msg = "Chybny pocet argumentu nebo spatny typ!"){
     fwrite(STDERR, "$msg\n");
     exit($code);
 }
 
+// Osekání vstupu a rozdělení do dvourozměrného pole
 while(!feof($stdin)){
     $one_by_one = fgets($stdin);
 
-    $comments = strpos($one_by_one, "#");
+    $comments = strpos($one_by_one, "#");                   
     
-    if($comments !== false){
+    if($comments !== false){                                // Smazání komentářů
         $one_by_one = substr($one_by_one, 0, $comments);
     }
 
-    $trimmed = trim($one_by_one);
+    $trimmed = trim($one_by_one);                           // Odstranění bílých znaků na začátku řádků
 
     while(str_contains($trimmed, '\t')){
-        $trimmed = str_replace("\t", " ", $trimmed);
+        $trimmed = str_replace("\t", " ", $trimmed);        // Odstranění dvojitých mezer a tabulátorů
     }
 
     while(str_contains($trimmed, '  ')){
         $trimmed = str_replace("  ", " ", $trimmed);
     }
-    if(!empty($trimmed)){
+    if(!empty($trimmed)){                                   // Rozdělení do pole po slovech pro každý řádek
         $finished = explode(" ", $trimmed);
         array_push($list, $finished);
     }
     
 }
 
+// Kontrola hlavičky
 if(strcmp($list[0][0], ".IPPcode23") || count($list[0]) != 1){
     fwrite(STDERR, "Chybejici nebo chybna hlavicka souboru!\n");
     exit(21);
 }
 
-
-
+// Odstranění hlavičky
 \array_splice($list, 0, 1);
 
-//print_r($list);
 
-//regex
+// Inicializace regulérních výrazů
 $var = "/^((GF)|(LF)|(TF))@([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
 $int = "/^(int@([+-]?[1-9]\d*|0))$/";
 $bool = "/^bool@(true|false)$/";
@@ -61,6 +64,8 @@ function is_label($arg){
         return true;
     return false;
 }
+
+// Zjištění typu výrazů po instrukci
 function get_type($arg){
     global $var;
     global $int;
@@ -97,43 +102,44 @@ function is_symbol($arg){
 
 
 
-
+// Kontrola, zda má každá instrukce správný počet předem daných argumentů
 $list_cnt = count($list);
 for($i = 0; $i < $list_cnt; $i++){
     if(in_array(strtoupper($list[$i][0]), $vars, true)){
         $instr = $list[$i][0];
-        //porovnej s instrukcemi bez atributu
+        // Instrukce bez atributu
         if(!strcasecmp($instr, "createframe") || !strcasecmp($instr, "pushframe") || !strcasecmp($instr, "popframe") || !strcasecmp($instr, "return") || !strcasecmp($instr, "break")){
             if(count($list[$i]) != 1){
                 err();
             }
         }
-        //instrukce s jednou promennou typu var
+        // Instrukce s jednou proměnnou typu var
         elseif(!strcasecmp($instr, "defvar") || !strcasecmp($instr, "pops")){
             if(count($list[$i]) != 2 || !preg_match($var, $list[$i][1])){
                 err();
             }                                                      
         }
-        //instrukce s jednou promennouo typu label
+        // Instrukce s jednou proměnnou typu label
         elseif(!strcasecmp($instr, "call") || !strcasecmp($instr, "label") || !strcasecmp($instr, "jump")){
             if(count($list[$i]) != 2 || !is_label($list[$i][1])){
                 err();
             }    
         }
-        //instrukce s jednou promennou typu symbol
+        // Instrukce s jednou proměnnou typu symbol
         elseif(!strcasecmp($instr, "write") || !strcasecmp($instr, "exit") || !strcasecmp($instr, "pushs") || !strcasecmp($instr, "dprint")){
             if(count($list[$i]) != 2 || !is_symbol($list[$i][1])){
                 //print($i);
                 err();
             }    
         }
-        //instrukce s dvema promennymi typu vas a symbol
+        // Instrukce s dvěma proměnnymi typu var a symbol
         elseif(!strcasecmp($instr, "move") || !strcasecmp($instr, "int2char") || !strcasecmp($instr, "strlen") || !strcasecmp($instr, "type") || !strcasecmp($instr, "not")){
             if(count($list[$i]) != 3 || !is_symbol($list[$i][2]) || !preg_match($var, $list[$i][1])){
                 //print("here\n".count($list[$i]).is_symbol($list[$i][2]));
                 err();
             }
         }
+        // Instrukce se třemi proměnnými typu var, symbol a symbol
         elseif(!strcasecmp($instr, "add") || !strcasecmp($instr, "sub") || !strcasecmp($instr, "mul") || !strcasecmp($instr, "idiv") 
         || !strcasecmp($instr, "lt") || !strcasecmp($instr, "gt") || !strcasecmp($instr, "eq") || !strcasecmp($instr, "stri2int") 
         || !strcasecmp($instr, "getchar") || !strcasecmp($instr, "and") || !strcasecmp($instr, "or") 
@@ -142,11 +148,13 @@ for($i = 0; $i < $list_cnt; $i++){
                 err();
             }
         }
+        // Instrukce s dvěma proměnnými typu var a type
         elseif(!strcasecmp($instr, "read")){
             if(count($list[$i]) != 3 || get_type($list[$i][2]) != types::type || !preg_match($var, $list[$i][1])){
                 err();
             }
         }
+        // Instrukce se třemi proměnnými typu label, symbol a symbol
         elseif(!strcasecmp($instr, "jumpifeq") || !strcasecmp($instr, "jumpifneq")){
             if(count($list[$i]) != 4 || !preg_match($label, $list[$i][1]) || !is_symbol($list[$i][2]) || !is_symbol($list[$i][3])){
                 err();
@@ -159,6 +167,7 @@ for($i = 0; $i < $list_cnt; $i++){
 }
 
 
+// Generování xml souboru
 $xml = new XMLWriter();
 $xml->openMemory();
 $xml->startDocument('1.0', 'UTF-8');

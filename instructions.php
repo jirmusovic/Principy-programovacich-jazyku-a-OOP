@@ -1,6 +1,6 @@
 <?php
 
-
+// Pole se všemi instrukcemi
 $vars = array(
             "MOVE",
             "CREATEFRAME",
@@ -39,6 +39,8 @@ $vars = array(
             "BREAK"
         );
 
+
+// Typy proměnných
 enum types{
     case int;
     case bool;

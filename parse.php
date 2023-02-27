@@ -1,13 +1,36 @@
 <?php
 include 'instructions.php';
+ini_set('display_errors', 'stderr');
+
 // Otevírání a načítání ze vstupu
 $stderr = fopen('php://stderr', 'w');
 $stdin = fopen('php://stdin', "r") or die("Unable to open file!");
+
+// Kontrola argumentů
+if (in_array('--help', $argv) || in_array('-h', $argv)){
+    if ($argc > 2){
+        fwrite(STDERR, "--help nemůže být použito s více parametry!\n");
+        exit(10);
+    }
+    echo "Chybové hlášky:\n 
+        0 - vše proběhlo v pořádku
+        10 - chybějící parametr skriptu (je-li třeba) nebo použití zakázané kombinace parametrů
+        11 - chyba při otevírání vstupních souborů (např. neexistence, nedostatečné oprávnění)
+        12 - chyba při otevření výstupních souborů pro zápis (např. nedostatečné oprávnění, chyba při zápisu)
+        21 - chybná nebo chybějící hlavička ve zdrojovém kódu zapsaném v IPPcode23
+        22 - neznámý nebo chybný operační kód ve zdrojovém kódu zapsaném v IPPcode23
+        23 - jiná lexikální nebo syntaktická chyba zdrojového kódu zapsaného v IPPcode23
+        99 - interní chyba (neovlivněná vstupními soubory či parametry příkazové řádky; např. chyba alokace paměti)\n";
+    exit(0);
+}
+
+
 // Inicializace pole, do kterého se budou skládat jednotlivé instrukce
 $list = array();
 global $vars;
+
 // Výpis chybové hlášky a ukončení programu
-ini_set('display_errors', 'stderr');
+
 function err($code = 23, $msg = "Chybny pocet argumentu nebo spatny typ!"){
     fwrite(STDERR, "$msg\n");
     exit($code);

@@ -81,6 +81,7 @@ $nil = "/^nil@nil$/";
 $label = "/^([a-z]|[A-Z]|([_$&%*!?])|(-))([_$&%*!?]|[0-9]|[a-z]|[A-Z]|(-))*$/";
 
 
+
 function is_label($arg){
     global $label;
     if(preg_match($label, $arg) && strcmp($arg, "bool") && strcmp($arg, "string") && strcmp($arg, "int"))
@@ -114,7 +115,7 @@ function get_type($arg){
     return types::nomatch;
 }
 
-
+// Ověření, zda argument label vyhovuje zadaným parametrům
 function is_symbol($arg){
     $type = get_type($arg);
     if($type == types::var || $type == types::int || $type == types::bool || $type == types::string || $type == types::nil)
